@@ -62,7 +62,16 @@ class GetStockReturns():
                       "Maximun Price": maximun_price,
                       "Standard Deviation": standard_deviation})
         return results
-    
 
+    #I am buying at the lower price of the opening day
+    def get_transaction_price(self, stock_name, transaction_type):
+        self.conn.request("GET", "/stock/v3/get-historical-data?symbol=" + stock_name + "&region=US", headers=self.headers)
+        res = self.conn.getresponse()
+        data = res.read()
+        json_data= json.loads(data)
+        if transaction_type == "buy":
+            return json_data["prices"][0]["open"]
+        return json_data["prices"][0]["close"]
+    
 
 
