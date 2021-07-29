@@ -3,7 +3,7 @@ import json
 import time
 from kafka import KafkaProducer
 from flask import Flask, request, jsonify
-from  stock_overview_class_one_stock import *
+from  stock_api import *
 
 app = Flask(__name__)
 producer = KafkaProducer(bootstrap_servers='kafka:29092')
