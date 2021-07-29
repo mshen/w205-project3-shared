@@ -1,0 +1,93 @@
+
+##After writing docker-compose up -d run this to get inside the mids container
+- docker-compose exec mids bash
+
+
+###Run the sh file that its on the folder- This is an executable  called python_38 which runs
+the following commands:
+
+#Run this
+chmod u+x python_38.sh
+./python_38.sh
+
+
+##Run this steps to install a specific version of python on the mids container
+- sudo apt update
+- curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+- sudo apt update  
+- sudo apt install software-properties-common
+(Write Y for Yes)
+- sudo add-apt-repository ppa:deadsnakes/ppa
+(Press ENTER)
+- sudo apt update
+- sudo apt install python3.8
+(Write Y for Yes)
+
+##Update alternatives version of python to python 3.8 (making priority 15)
+- update-alternatives --install /usr/bin/python python /usr/bin/python3.8 15
+
+
+##Downloading pip on python3.8
+sudo apt-get install python3.8-distutils
+(Write Y for Yes)
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+python get-pip.py --force-reinstall
+
+
+##Install python packages##
+python -m  pip install flask
+python -m pip install http.client
+python -m pip install numpy
+python -m pip install requests
+python -m pip install kafka-python
+
+
+#Test that everything is running inside the container
+python server.py
+
+##Run the app when the container is up 
+sudo docker-compose exec mids env FLASK_APP=server.py flask run --host 0.0.0.0
+
+
+#Open a new terminal on the folder of the app and run to see that the api is working
+docker-compose exec mids curl http://127.0.0.1:5000/AMZN
+
+
+#Create  Kafka watchers
+sudo docker-compose exec mids kafkacat -C -b kafka:29092 -t stock_results -o beginning 
+sudo docker-compose exec mids kafkacat -C -b kafka:29092 -t stock_call  -o beginning
+sudo docker-compose exec mids kafkacat -C -b kafka:29092 -t stock_operation -o beginning
+
+
+#Do simulations
+docker-compose exec mids ab -n 100 -H "host:andres" http://localhost:5000/
+sudo docker-compose exec mids ab -n 10 -H "host:andres" http://localhost:5000/AMZN
+sudo docker-compose exec mids ab -n 10 -H "host:andres" http://localhost:5000/TWTR 
+sudo docker-compose exec mids ab -p post.json -T application/json -n 10 http://localhost:5000/GOOGL/sell/222
+sudo docker-compose exec mids ab -p post.json -T application/json -n 10 http://localhost:5000/AMZN/buy/222
+
+##Submit the spark job,  but you have a problem on the spark volume control
+sudo docker-compose exec spark spark-submit /w205/spark_table_creation.py 
+
+
+##See that the spark job sent the tables to hive
+sudo docker-compose exec cloudera hadoop fs -ls /tmp/extracted_stock_events
+sudo docker-compose exec cloudera hadoop fs -ls /tmp/extracted_user_results
+sudo docker-compose exec cloudera hadoop fs -ls /tmp/stock_operations
+
+
+##This is the one that is not working since it has a different json format
+sudo docker-compose exec cloudera hadoop fs -ls /tmp/stock_results
+
+
+
+
+##Open the jupyter notebook to make changes in the pyspark environment
+sudo docker-compose exec spark env PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS= 'notebook --no-browser --port 8889 --ip 0.0.0.0 --allow-root --notebook-dir=/w205/' pyspark
+
+
+
+
+
+
+
