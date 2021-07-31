@@ -28,7 +28,6 @@ class GetStockReturns():
         self.conn.request("GET", "/stock/v3/get-historical-data?symbol=" + self.StockName + "&region=US", headers=self.headers)
         res = self.conn.getresponse()
         data = res.read()
-        print(data)
         json_data= json.loads(data)
         local_price_list= json_data['prices']
         price_and_dates=[]
@@ -56,7 +55,7 @@ class GetStockReturns():
          #Creation of the dictionary containing the data
         now = datetime.now()
         results= dict({"Stock": self.StockName,
-                      "Date of Query": now.strftime("%d/%m/%Y %H:%M:%S"),
+                      #"Date of Query": now.strftime("%d/%m/%Y %H:%M:%S"),
                       "Yearly Return": yearly_return,
                       "Mean Price": mean_price,
                       "Minimun Price":minimun_price,

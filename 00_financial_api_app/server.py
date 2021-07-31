@@ -2,24 +2,23 @@
 import json
 import time
 from kafka import KafkaProducer
-from flask import Flask, request, jsonify
+from flask import Flask, request,jsonify
 from  stock_api import *
+
 
 app = Flask(__name__)
 producer = KafkaProducer(bootstrap_servers='kafka:29092')
 
 ##This is for the use of kafka in the container
-# =============================================================================
 def log_to_kafka(topic, event):
-     event.update(request.headers)
-     producer.send(topic, json.dumps(event).encode())
-# 
-# =============================================================================
+    event.update(request.headers)
+    producer.send(topic, json.dumps(event).encode())
+
 
 @app.route("/")
 def default_response():
     default_event = {'event_type': 'default instructions'}
-    log_to_kafka('event', default_event)
+    log_to_kafka('default_call', default_event)
     return ('If you want to consult the yearly return of a stock go to the following route: /stock name\n If you want to consult a metric go to the \
             following route: /stockName/metric' )
 
@@ -30,10 +29,10 @@ def testing_stock(stock_name):
     stock_overview= GetStockReturns(stock_name)
     result= stock_overview.getYahooAPI()
     
-    #Sending the event to kafka
-    stock_request_event = {'event_type': 'check_stock_{}'.format(stock_name)}
-    log_to_kafka('event', stock_request_event)
-
+    #Sending both events to kafka
+    stock_request_event = {'event_type': 'calling for stock {}'.format(stock_name)}
+    log_to_kafka('stock_call', stock_request_event)
+    #log_to_kafka('stock_results', result)
     #Final return to the user
     return result
 
@@ -43,17 +42,20 @@ def action_stock(stock_name,action,quantity):
     if action == "buy":
         buy_price = stock_overview.get_transaction_price(stock_name,action)
         stock_transaction_event = {'event_type': '{}_{}'.format(action, stock_name),'buy_price': buy_price, 'transaction_amount' : buy_price * int(quantity), "transaction_timestamp" : time.time() * 1000}
-        log_to_kafka('event', stock_transaction_event)
+        log_to_kafka('stock_operation', stock_transaction_event)
         return jsonify({"task": "bought_{}_{}".format(quantity,stock_name)}), 201
-    
+        
+        
     if action == "sell":
         sell_price = stock_overview.get_transaction_price(stock_name, action)
         stock_transaction_event = {"event_type": "{}_{}".format(action, stock_name),"sell_price": sell_price, "transaction_amount" : sell_price * int(quantity),"transaction_timestamp" : time.time() * 1000}
-        log_to_kafka('event', stock_transaction_event)
+        log_to_kafka('stock_operation', stock_transaction_event)
         return jsonify({"task": "sold_{}_{}".format(quantity, stock_name)}), 201
+        
 
 
 if __name__ == '__main__':
     app.debug=True
     app.run()
+
 
