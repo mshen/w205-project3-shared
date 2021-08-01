@@ -51,8 +51,8 @@ services:
       - ~/w205:/w205
     expose:
       - "8888"
-    #ports:
-    #  - "8888:8888"
+    ports:
+      - "8889:8888" # 8888 conflicts with hue
     depends_on:
       - cloudera
     environment:
