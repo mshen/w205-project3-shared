@@ -43,14 +43,28 @@ def action_stock(stock_name,action,quantity):
     stock_overview = GetStockReturns(stock_name)
     if action == "buy":
         buy_price = stock_overview.get_transaction_price(stock_name,action)
-        stock_transaction_event = {'event_type': '{}_{}'.format(action, stock_name),'price': buy_price, 'transaction_amount' : buy_price * int(quantity), "transaction_timestamp" : time.time() * 1000}
+        stock_transaction_event = {
+            'event_type': '{}_{}'.format(action, stock_name),
+            'stock_name': stock_name,
+            'price': buy_price,
+            'quantity': int(quantity),
+            'transaction_amount' : buy_price * int(quantity),
+            "transaction_timestamp" : time.time() * 1000
+        }
         
         log_to_kafka('stock_operation',  stock_transaction_event)
         return jsonify({"task": "bought_{}_{}".format(quantity,stock_name)}), 201
     
     if action == "sell":
         sell_price = stock_overview.get_transaction_price(stock_name, action)
-        stock_transaction_event = {"event_type": "{}_{}".format(action, stock_name),"price": sell_price, "transaction_amount" : sell_price * int(quantity),"transaction_timestamp" : time.time() * 1000}
+        stock_transaction_event = {
+            "event_type": "{}_{}".format(action, stock_name),
+            'stock_name': stock_name,
+            "price": sell_price,
+            "quantity": int(quantity),
+            "transaction_amount" : sell_price * int(quantity),
+            "transaction_timestamp" : time.time() * 1000
+        }
         log_to_kafka('stock_operation',  stock_transaction_event)
         return jsonify({"task": "sold_{}_{}".format(quantity, stock_name)}), 201
 

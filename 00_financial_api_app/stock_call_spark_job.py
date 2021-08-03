@@ -90,24 +90,6 @@ def main():
     
     sink.awaitTermination()
     
-#     time.sleep(20)
-    
-#     pf = spark.read.json("/tmp/stock_call")
-#     pf.printSchema()
-#     pf.createOrReplaceTempView("stock_call")
-#     ops = spark.sql("SELECT * from stock_call")
-    
-#     pf.show(1, truncate=False)
-    
-#     #stock_calls.createOrReplaceTempView("stock_call")
-#     spark.sql("drop table if exists stock_call_hive")
-#     spark.sql("""
-#         create table stock_call_hive
-#         stored as parquet
-#         location '/tmp/stock_call'
-#         as
-#         select * from stock_call
-#     """)
     
 
 if __name__ == "__main__":

@@ -9,7 +9,9 @@ rand_event_num=`shuf -i 1-10 -n 1`
 
 
 docker-compose exec mids ab  -n $rand_event_num  http://localhost:5000/${stock_tickers[tick_idx]}
-#docker-compose exec mids ab -p project-3-atreyid/post.json -T application/json -n $rand_event_num  http://localhost:5000/$stock_ticker(stock_tick)/buy/$stock_rand_num
-#docker-compose exec mids ab -p project-3-atreyid/post.json -T application/json -n $rand_event_num  http://localhost:5000/$stock_tick/sell/$stock_rand_num
+
+docker-compose exec mids ab -p project-3-atreyid/post.json -T application/json -n $rand_event_num  http://localhost:5000/$stock_ticker(stock_tick)/buy/$stock_rand_num
+
+docker-compose exec mids ab -p project-3-atreyid/post.json -T application/json -n $rand_event_num  http://localhost:5000/$stock_tick/sell/$stock_rand_num
 
 

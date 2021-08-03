@@ -7,7 +7,7 @@ import json
 import time
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import udf, from_json
-from pyspark.sql.types import StructType, StructField, StringType, DoubleType
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType
 
 
 
@@ -24,6 +24,8 @@ def stock_operation_event_schema():
      |-- Host: string (nullable = true)
      |-- User-Agent: string (nullable = true)
      |-- price: double (nullable = true)
+     |-- quantity: int (nullable = true)
+     |-- stock_name: string (nullable = true)
      |-- event_type: string (nullable = true)
      |-- transaction_amount: double (nullable = true)
      |-- transaction_timestamp: double (nullable = true)
@@ -34,6 +36,8 @@ def stock_operation_event_schema():
         StructField("Content-Type", StringType(), True),
         StructField("Host", StringType(), True),
         StructField("User-Agent", StringType(), True),
+        StructField("stock_name", StringType(), True),
+        StructField("quantity", IntegerType(), True),
         StructField("price", DoubleType(), True),
         StructField("event_type", StringType(), True),
         StructField("transaction_amount", DoubleType(), True),
@@ -89,15 +93,7 @@ def main():
         .trigger(processingTime="20 seconds") \
         .outputMode("append") \
         .start()
-    
-#     time.sleep(20)
-    
-#     pf = spark.read.parquet("/tmp/stock_operation")
-#     pf.createOrReplaceTempView("stock_operation")
-#     ops = spark.sql("SELECT * from stock_operation")
-    
-#     ops.printSchema()
-#     ops.show(1, truncate=False)
+
     
     sink.awaitTermination()
 
