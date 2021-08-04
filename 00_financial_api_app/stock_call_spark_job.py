@@ -67,6 +67,7 @@ def main():
     .format("kafka") \
     .option("kafka.bootstrap.servers", "kafka:29092") \
     .option("subscribe", "stock_call") \
+    .option("startingOffsets","earliest")\
     .load()
     
     stock_calls = raw_stock_call_df \
