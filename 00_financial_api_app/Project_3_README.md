@@ -36,11 +36,9 @@ The `startup.sh` script runs the following:
 ```
 #!/bin/bash
 
-##update python version to 3.8
-
 sudo apt update
 curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-sudo apt update
+sudo apt update  
 sudo apt install software-properties-common
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt update
@@ -52,8 +50,6 @@ sudo apt-get install python3.8-distutils
 curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 python get-pip.py --force-reinstall
 
-##Install necessary python packages
-
 python -m  pip install flask
 python -m pip install http.client
 python -m pip install numpy
@@ -61,8 +57,7 @@ python -m pip install requests
 python -m pip install kafka-python
 
 
-##Install apache bench
-
+#install apache bench
 apt-get update
 apt-get install apache2-utils
 
@@ -73,12 +68,9 @@ apt-get install apache2-utils
 ```
 docker-compose exec mids python --version
 ```
-#### we should get:
-```
-Python 3.8.9
-```
+#### we should get `Python 3.8.9` as the current version.
 
-#### c. Now we are ready to launch our server for our data pipeline.
+#### c. Now we are ready to launch our server for our data pipeline using the following command.
 
 ```
 docker-compose exec mids python w205-project3-shared/00_financial_api_app/server.py
@@ -116,7 +108,7 @@ def testing_stock(stock_name):
     #Calling the Yahoo finance API
     stock_overview= GetStockReturns(stock_name)
     result= stock_overview.getYahooAPI()
-
+    
     #Sending the event to kafka
     stock_request_event = {'event_type': 'check_stock_{}'.format(stock_name),'stock_name': stock_name, "query_timestamp" : time.time() * 1000}
     print(stock_request_event)
@@ -131,14 +123,28 @@ def action_stock(stock_name,action,quantity):
     stock_overview = GetStockReturns(stock_name)
     if action == "buy":
         buy_price = stock_overview.get_transaction_price(stock_name,action)
-        stock_transaction_event = {'event_type': '{}_{}'.format(action, stock_name),'price': buy_price, 'transaction_amount' : buy_price * int(quantity), "transaction_timestamp" : time.time() * 1000}
-
+        stock_transaction_event = {
+            'event_type': '{}_{}'.format(action, stock_name),
+            'stock_name': stock_name,
+            'price': buy_price,
+            'quantity': int(quantity),
+            'transaction_amount' : buy_price * int(quantity),
+            "transaction_timestamp" : time.time() * 1000
+        }
+        
         log_to_kafka('stock_operation',  stock_transaction_event)
         return jsonify({"task": "bought_{}_{}".format(quantity,stock_name)}), 201
-
+    
     if action == "sell":
         sell_price = stock_overview.get_transaction_price(stock_name, action)
-        stock_transaction_event = {"event_type": "{}_{}".format(action, stock_name),"price": sell_price, "transaction_amount" : sell_price * int(quantity),"transaction_timestamp" : time.time() * 1000}
+        stock_transaction_event = {
+            "event_type": "{}_{}".format(action, stock_name),
+            'stock_name': stock_name,
+            "price": sell_price,
+            "quantity": int(quantity),
+            "transaction_amount" : sell_price * int(quantity),
+            "transaction_timestamp" : time.time() * 1000
+        }
         log_to_kafka('stock_operation',  stock_transaction_event)
         return jsonify({"task": "sold_{}_{}".format(quantity, stock_name)}), 201
 
@@ -149,7 +155,7 @@ if __name__ == '__main__':
 
 ```
 
-## 3. We can now make various calls to the server using another terminal:
+## 3. We can now make various calls to the server using another terminal. Note that the following steps are examples to show what is possible, but we wrote these into the script that is executed in step 4 and therefore do not execute these in our pipeline.
 
 - #### Check for a stock
 
@@ -176,27 +182,35 @@ docker-compose exec mids kafkacat -C -b kafka:29092 -t event -o beginning
 ```
 
 ## 4. Automate the buying, selling and checking of stocks using a script
+We next run our script that autogenerates various types of calls:
 ```
-auto_generate_ab.sh
+./auto_generate_ab.sh
 ```
 The auto_generate_ab.sh script is as follows:
 ```
 #!/bin/bash
 stock_tickers=('MSFT' 'AAPL' 'AMZN' 'GOOG' 'BABA' 'FB' 'INTC' 'NVDA' 'CRM' 'PYPL' 'TSLA' 'AMD')
-tick_idx=`shuf -i 0-11 -n 1`
+tick_idx_1=`shuf -i 0-11 -n 1`
+tick_idx_2=`shuf -i 0-11 -n 1`
+tick_idx_3=`shuf -i 0-11 -n 1`
 
 stock_rand_num=`shuf -i 1-50 -n 1`
-rand_event_num=`shuf -i 1-10 -n 1`
+rand_event_num=`shuf -i 1-3 -n 1`
 
 #echo ${stock_tickers[tick_idx]}
 
 
-docker-compose exec mids ab  -n $rand_event_num  http://localhost:5000/${stock_tickers[tick_idx]}
-#docker-compose exec mids ab -p project-3-atreyid/post.json -T application/json -n $rand_event_num  http://localhost:5000/$stock_ticker(stock_tick)/buy/$stock_rand_num
-#docker-compose exec mids ab -p project-3-atreyid/post.json -T application/json -n $rand_event_num  http://localhost:5000/$stock_tick/sell/$stock_rand_num
+docker-compose exec mids ab  -n $rand_event_num  http://localhost:5000/${stock_tickers[tick_idx_1]}
+
+docker-compose exec mids ab -p /w205/w205-project3-shared/00_financial_api_app/post.json -T application/json -n $rand_event_num  http://localhost:5000/${stock_tickers[tick_idx_2]}/buy/$stock_rand_num
+
+docker-compose exec mids ab -p /w205/w205-project3-shared/00_financial_api_app/post.json -T application/json -n $rand_event_num  http://localhost:5000/${stock_tickers[tick_idx_3]}/sell/$stock_rand_num
+
 ```
 
-## 5. We can open new terminals to submit spark jobs; each job will run on a separate terminal.
+## 5. We open 3 new terminals to submit spark jobs; each of the following jobs will run on a separate terminal.
+#### a. Terminal 1: `stock_call_spark_job.py`
+In the first terminal, we run this spark job to log stock calls:
 ```
 docker-compose exec spark spark-submit /w205/w205-project3-shared/00_financial_api_app/stock_call_spark_job.py
 ```
@@ -216,8 +230,8 @@ from pyspark.sql.types import StructType, StructField, StringType, DoubleType
 
 
 """
-We want to create two tables, one table that stores the event of calling the API,
-and one event that appends the results of the API call.
+We want to create two tables, one table that stores the event of calling the API, 
+and one event that appends the results of the API call. 
 """
 def stock_call_event_schema():
     """
@@ -256,7 +270,7 @@ def is_stock_call_event(event_as_json):
 def main():
     """
     main
-
+    
     """
     ##We open the spark session
     spark = SparkSession \
@@ -264,25 +278,26 @@ def main():
         .appName("ExtractEventsJob") \
         .enableHiveSupport() \
         .getOrCreate()    
-
+    
 
     raw_stock_call_df = spark \
     .readStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", "kafka:29092") \
     .option("subscribe", "stock_call") \
+    .option("startingOffsets","earliest")\
     .load()
-
+    
     stock_calls = raw_stock_call_df \
         .filter(is_stock_call_event(raw_stock_call_df.value.cast('string'))) \
         .select(raw_stock_call_df.value.cast('string'),
                 raw_stock_call_df.timestamp.cast('string'),
                 from_json(raw_stock_call_df.value.cast('string'),
                           stock_call_event_schema()).alias('json')) \
-        .select('json.*')
+        .select('json.*') 
 
     stock_calls.printSchema()
-
+    
     sink = stock_calls \
         .writeStream \
         .format("parquet") \
@@ -291,33 +306,17 @@ def main():
         .trigger(processingTime="20 seconds") \
         .outputMode("append") \
         .start()
-
+    
     sink.awaitTermination()
-
-#     time.sleep(20)
-
-#     pf = spark.read.json("/tmp/stock_call")
-#     pf.printSchema()
-#     pf.createOrReplaceTempView("stock_call")
-#     ops = spark.sql("SELECT * from stock_call")
-
-#     pf.show(1, truncate=False)
-
-#     #stock_calls.createOrReplaceTempView("stock_call")
-#     spark.sql("drop table if exists stock_call_hive")
-#     spark.sql("""
-#         create table stock_call_hive
-#         stored as parquet
-#         location '/tmp/stock_call'
-#         as
-#         select * from stock_call
-#     """)
-
+    
+    
 
 if __name__ == "__main__":
     main()
 ```
 
+#### b. Terminal 2: `stock_transaction_spark_job.py`
+In the second terminal, we run the following spark job to create spark data frames for the Kafka topic for stock transactions:
 
 ```
 docker-compose exec spark spark-submit /w205/w205-project3-shared/00_financial_api_app/stock_transaction_spark_job.py
@@ -333,13 +332,13 @@ import json
 import time
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import udf, from_json
-from pyspark.sql.types import StructType, StructField, StringType, DoubleType
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType
 
 
 
 """
-We want to create two tables, one table that stores the event of calling the API,
-and one event that appends the results of the API call.
+We want to create two tables, one table that stores the event of calling the API, 
+and one event that appends the results of the API call. 
 """
 def stock_operation_event_schema():
     """
@@ -350,6 +349,8 @@ def stock_operation_event_schema():
      |-- Host: string (nullable = true)
      |-- User-Agent: string (nullable = true)
      |-- price: double (nullable = true)
+     |-- quantity: int (nullable = true)
+     |-- stock_name: string (nullable = true)
      |-- event_type: string (nullable = true)
      |-- transaction_amount: double (nullable = true)
      |-- transaction_timestamp: double (nullable = true)
@@ -360,6 +361,8 @@ def stock_operation_event_schema():
         StructField("Content-Type", StringType(), True),
         StructField("Host", StringType(), True),
         StructField("User-Agent", StringType(), True),
+        StructField("stock_name", StringType(), True),
+        StructField("quantity", IntegerType(), True),
         StructField("price", DoubleType(), True),
         StructField("event_type", StringType(), True),
         StructField("transaction_amount", DoubleType(), True),
@@ -380,7 +383,7 @@ def is_stock_transaction_event(event_as_json):
 def main():
     """
     main
-
+    
     """
     ##We open the spark session
     spark = SparkSession \
@@ -388,25 +391,26 @@ def main():
         .appName("ExtractEventsJob") \
         .enableHiveSupport() \
         .getOrCreate()    
-
+    
     ##Saving operations from user.  Topic called: stock_operation
     raw_stock_operation_df = spark \
     .readStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", "kafka:29092") \
     .option("subscribe", "stock_operation") \
+    .option("startingOffsets","earliest")\
     .load()
-
+    
     stock_purchases = raw_stock_operation_df \
         .filter(is_stock_transaction_event(raw_stock_operation_df.value.cast('string'))) \
         .select(raw_stock_operation_df.value.cast('string'),
                 raw_stock_operation_df.timestamp.cast('string'),
                 from_json(raw_stock_operation_df.value.cast('string'),
                           stock_operation_event_schema()).alias('json')) \
-        .select('json.*')
-
+        .select('json.*') 
+    
     stock_purchases.printSchema()
-
+    
     sink = stock_purchases \
         .writeStream \
         .format("parquet") \
@@ -416,21 +420,68 @@ def main():
         .outputMode("append") \
         .start()
 
-#     time.sleep(20)
-
-#     pf = spark.read.parquet("/tmp/stock_operation")
-#     pf.createOrReplaceTempView("stock_operation")
-#     ops = spark.sql("SELECT * from stock_operation")
-
-#     ops.printSchema()
-#     ops.show(1, truncate=False)
-
+    
     sink.awaitTermination()
 
 if __name__ == "__main__":
     main()
 ```
-## 6. Check on another terminal that the files are being written through to /tmp
+
+#### c. Terminal 3: `create_hive_table_spark_job.py`
+In the third terminal, we run a spark job to create tables from hive.
+
+```
+docker-compose exec spark spark-submit /w205/w205-project3-shared/00_financial_api_app/create_hive_table_spark_job.py
+```
+
+The spark job `create_hive_table_spark_job.py` runs the following:
+
+```
+#!/usr/bin/env python
+
+import json
+import time
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import udf, from_json
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType
+
+def main():
+    """
+    main
+
+    """
+    while True:
+        # We open the spark session
+        spark = SparkSession \
+            .builder \
+            .appName("CreateHiveTableJob") \
+            .enableHiveSupport() \
+            .getOrCreate()
+
+
+        spark.sql("drop table if exists stock_call_hive")
+        spark.sql("""
+            create external table stock_call_hive (accept STRING, content_length STRING, content_type STRING, host STRING, user_agent STRING, stock_name STRING, event_type STRING, query_imestamp DOUBLE)
+            stored as parquet
+            location '/tmp/stock_call'
+            TBLPROPERTIES ("parquet.compress" = "SNAPPY")
+        """)
+    
+        spark.sql("drop table if exists stock_operation_hive")
+        spark.sql("""
+            create external table stock_operation_hive (accept STRING, content_length STRING, content_type STRING, host STRING, user_agent STRING, stock_name STRING, quantity INT, price DOUBLE, event_type STRING, transaction_amount DOUBLE, transaction_timestamp DOUBLE)
+            stored as parquet
+            location '/tmp/stock_operation'
+            TBLPROPERTIES ("parquet.compress" = "SNAPPY")
+        """)
+        time.sleep(30)
+
+if __name__ == "__main__":
+    main()
+```
+
+
+## 6. Check on a new terminal that the files are being written through to /tmp
 
 ```
 docker-compose exec cloudera hadoop fs -ls /tmp/stock_operation
@@ -440,31 +491,93 @@ docker-compose exec cloudera hadoop fs -ls /tmp/stock_operation
 docker-compose exec cloudera hadoop fs -ls /tmp/stock_call
 ```
 
-## 7. Load data from hive and use pyspark to run some queries:
+## 7. Load the data from hive and using presto run some queries:
+Use presto to access the tables:
+```
+docker-compose exec presto presto --server presto:8080 --catalog hive --schema default
+```
+The following command shows the tables. There are two tables, `stock_call_hive` and `stock_operation_hive`.
+```
+presto:default> show tables;
+```
+## 8. Make queries from each table.
+#### a. From the `stock_call_hive` table, we query the number of times each stock was checked.
+```
+presto:default> 
+SELECT stock_name, COUNT(stock_name) AS call_frequency
+FROM stock_call_hive 
+GROUP BY stock_name 
+ORDER BY call_frequency desc;
+```
+#### b. From the `stock_operation_hive` table, we run queries to answer the following:
+
+
+stock_name | quantity | price | event_type (buy/sell)
+
+What were the most purchased stocks and average price of purchase?
+```
+presto:default> 
+WITH purchases AS
+(SELECT * FROM stock_operation_hive WHERE event_type=buy)
+SELECT stock_name, SUM(quantity) AS total_quantity_purchased, AVG(price/quantity) AS price_per_stock
+FROM purchases
+GROUP BY stock_name
+ORDER BY total_quantity_purchased DESC LIMIT 5;
+```
+What were the least purchased stocks and average price of purchase?
+```
+presto:default> 
+WITH purchases AS
+(SELECT * FROM stock_operation_hive WHERE event_type=buy)
+SELECT stock_name, SUM(quantity) AS total_quantity_purchased, AVG(price/quantity) AS avg_price_per_stock
+FROM purchases
+GROUP BY stock_name 
+ORDER BY total_quantity_purchased ASC LIMIT 5;
 
 ```
-docker-compose exec spark pyspark
+What were the most sold stocks and average price of sale?
 ```
-Queries:
+WITH sales AS
+(SELECT * FROM stock_operation_hive WHERE event_type=sell)
+SELECT stock_name, SUM(quantity) AS total_quantity_sold, AVG(price/quantity) AS avg_price_per_stock
+FROM sales 
+GROUP BY stock_name 
+ORDER BY total_quantity_sold DESC LIMIT 5;
 ```
->>> pf = spark.read.parquet("/tmp/stock_call")
->>> pf.createOrReplaceTempView("stock_call")
->>> spark.sql("SELECT * FROM stock_call").show(truncate=False)
+What were the least sold stocks and average price of sale?
 ```
+WITH sales AS
+(SELECT * FROM stock_operation_hive WHERE event_type=sell)
+SELECT stock_name, SUM(quantity) AS total_quantity_sold, AVG(price/quantity) AS avg_price_per_stock
+FROM sales 
+GROUP BY stock_name 
+ORDER BY total_quantity_sold ASC LIMIT 5;
 ```
->>> spark.sql("SELECT COUNT(stock_name) FROM stock_call GROUP BY stock_name").show(truncate=False)
+What was the highest price a stock sold for?
 ```
+WITH sales AS
+(SELECT * FROM stock_operation_hive WHERE event_type=sell)
+SELECT stock_name, MAX(price/quantity) as highest_price_sold
+FROM sales
 ```
->>> spark.sql("SELECT stock_name, COUNT(stock_name) as query_count FROM stock_call GROUP BY stock_name ORDER BY query_count desc LIMIT 1").show(truncate=False)
+What was the lowest price a stock sold for?
 ```
+WITH sales AS
+(SELECT * FROM stock_operation_hive WHERE event_type=sell)
+SELECT stock_name, MIN(price/quantity) AS lowest_price_sold
+FROM sales
 ```
->>> spark.sql("SELECT stock_name, COUNT(stock_name) as query_count FROM stock_call GROUP BY stock_name ORDER BY query_count asc LIMIT 1").show(truncate=False)
+What was the highest price a stock was bought for?
 ```
+WITH purchases AS
+(SELECT * FROM stock_operation_hive WHERE event_type=buy)
+SELECT stock_name, MAX(price/quantity) AS highest_price_bought
+FROM purchases
 ```
-pf = spark.read.parquet("/tmp/stock_operation")
->>> pf.createOrReplaceTempView("stock_operation")
->>> spark.sql("SELECT * FROM stock_operation").show(truncate=False)
+What was the lowest price a stock was bought for?
 ```
-```
->>> spark.sql("SELECT MAX(transaction_amount) AS max_transaction FROM stock_operation").show(truncate=False)
+WITH purchases AS
+(SELECT * FROM stock_operation_hive WHERE event_type=buy)
+SELECT stock_name, MIN(price/quantity) AS lowest_price_bought
+FROM purchases
 ```
