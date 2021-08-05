@@ -517,73 +517,39 @@ stock_name  | call_frequency
 ```
 #### b. From the `stock_operation_hive` table, we run queries to answer the following:
 
-
-stock_name | quantity | price | event_type (buy/sell)
-
 What were the most purchased stocks and average price of purchase?
 ```
-presto:default> 
-WITH purchases AS
-(SELECT * FROM stock_operation_hive WHERE event_type=buy) \
-SELECT stock_name, SUM(quantity) AS total_quantity_purchased, AVG(price/quantity) AS price_per_stock \
-FROM purchases \
-GROUP BY stock_name \
-ORDER BY total_quantity_purchased DESC LIMIT 5;
+presto:default> presto:default> WITH purchases AS (SELECT * FROM stock_operation_hive WHERE event_type LIKE '%buy%') SELECT stock_name, SUM(quantity) AS total_quantity_purchased, AVG(price/quantity) AS avg_price_per_stock FROM purchases GROUP BY stock_name ORDER BY total_quantity_purchased DESC LIMIT 5;
 ```
 What were the least purchased stocks and average price of purchase?
 ```
-presto:default> 
-WITH purchases AS
-(SELECT * FROM stock_operation_hive WHERE event_type=buy)
-SELECT stock_name, SUM(quantity) AS total_quantity_purchased, AVG(price/quantity) AS avg_price_per_stock
-FROM purchases
-GROUP BY stock_name 
-ORDER BY total_quantity_purchased ASC LIMIT 5;
+presto:default> presto:default> WITH purchases AS (SELECT * FROM stock_operation_hive WHERE event_type LIKE '%buy%') SELECT stock_name, SUM(quantity) AS total_quantity_purchased, AVG(price/quantity) AS avg_price_per_stock FROM purchases GROUP BY stock_name ORDER BY total_quantity_purchased ASC LIMIT 5;
 
 ```
 What were the most sold stocks and average price of sale?
 ```
-WITH sales AS
-(SELECT * FROM stock_operation_hive WHERE event_type=sell)
-SELECT stock_name, SUM(quantity) AS total_quantity_sold, AVG(price/quantity) AS avg_price_per_stock
-FROM sales 
-GROUP BY stock_name 
-ORDER BY total_quantity_sold DESC LIMIT 5;
+presto:default> presto:default> WITH sales AS (SELECT * FROM stock_operation_hive WHERE event_type LIKE '%sell%') SELECT stock_name, SUM(quantity) AS total_quantity_sold, AVG(price/quantity) AS avg_price_per_stock FROM sales GROUP BY stock_name ORDER BY total_quantity_sold DESC LIMIT 5;
 ```
 What were the least sold stocks and average price of sale?
 ```
-WITH sales AS
-(SELECT * FROM stock_operation_hive WHERE event_type=sell)
-SELECT stock_name, SUM(quantity) AS total_quantity_sold, AVG(price/quantity) AS avg_price_per_stock
-FROM sales 
-GROUP BY stock_name 
-ORDER BY total_quantity_sold ASC LIMIT 5;
+presto:default> presto:default> WITH sales AS (SELECT * FROM stock_operation_hive WHERE event_type LIKE '%sell%') SELECT stock_name, SUM(quantity) AS total_quantity_sold, AVG(price/quantity) AS avg_price_per_stock FROM sales GROUP BY stock_name ORDER BY total_quantity_sold ASC LIMIT 5;
 ```
 What was the highest price a stock sold for?
 ```
-WITH sales AS
-(SELECT * FROM stock_operation_hive WHERE event_type=sell)
-SELECT stock_name, MAX(price/quantity) as highest_price_sold
-FROM sales
+WITH sales AS (SELECT * FROM stock_operation_hive WHERE event_type LIKE '%sell%') SELECT stock_name, price/quantity AS price_per_stock FROM sales ORDER BY price_per_stock DESC LIMIT 5;
 ```
 What was the lowest price a stock sold for?
 ```
-WITH sales AS
-(SELECT * FROM stock_operation_hive WHERE event_type=sell)
-SELECT stock_name, MIN(price/quantity) AS lowest_price_sold
-FROM sales
+WITH sales AS (SELECT * FROM stock_operation_hive WHERE event_type LIKE '%sell%') SELECT stock_name, price/quantity AS price_per_stock FROM sales ORDER BY price_per_stock ASC LIMIT 5;
 ```
 What was the highest price a stock was bought for?
 ```
-WITH purchases AS
-(SELECT * FROM stock_operation_hive WHERE event_type=buy)
-SELECT stock_name, MAX(price/quantity) AS highest_price_bought
-FROM purchases
+WITH purchases AS (SELECT * FROM stock_operation_hive WHERE event_type LIKE '%buy%') SELECT stock_name, price/quantity AS price_per_stock FROM purchases ORDER BY price_per_stock DESC LIMIT 5;
 ```
 What was the lowest price a stock was bought for?
 ```
-WITH purchases AS
-(SELECT * FROM stock_operation_hive WHERE event_type=buy)
-SELECT stock_name, MIN(price/quantity) AS lowest_price_bought
-FROM purchases
+WITH purchases AS (SELECT * FROM stock_operation_hive WHERE event_type LIKE '%buy%') SELECT stock_name, price/quantity AS price_per_stock FROM purchases ORDER BY ASC price_per_stock ASC LIMIT 5;
+
 ```
+
+
