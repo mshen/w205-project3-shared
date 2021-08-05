@@ -501,13 +501,19 @@ The following command shows the tables. There are two tables, `stock_call_hive` 
 presto:default> show tables;
 ```
 ## 8. Make queries from each table.
-#### a. From the `stock_call_hive` table, we query the number of times each stock was checked.
+#### a. From the `stock_call_hive` table, we query the most checked stock.
 ```
 presto:default> 
-SELECT stock_name, COUNT(stock_name) AS call_frequency
-FROM stock_call_hive 
-GROUP BY stock_name 
-ORDER BY call_frequency desc;
+SELECT stock_name, COUNT(stock_name) AS call_frequency \
+FROM stock_call_hive \
+GROUP BY stock_name \
+ORDER BY call_frequency desc \
+LIMIT 1;
+
+stock_name  | call_frequency 
+------------+----------------
+ TSLA       |        35 
+(1 row)
 ```
 #### b. From the `stock_operation_hive` table, we run queries to answer the following:
 
@@ -518,10 +524,10 @@ What were the most purchased stocks and average price of purchase?
 ```
 presto:default> 
 WITH purchases AS
-(SELECT * FROM stock_operation_hive WHERE event_type=buy)
-SELECT stock_name, SUM(quantity) AS total_quantity_purchased, AVG(price/quantity) AS price_per_stock
-FROM purchases
-GROUP BY stock_name
+(SELECT * FROM stock_operation_hive WHERE event_type=buy) \
+SELECT stock_name, SUM(quantity) AS total_quantity_purchased, AVG(price/quantity) AS price_per_stock \
+FROM purchases \
+GROUP BY stock_name \
 ORDER BY total_quantity_purchased DESC LIMIT 5;
 ```
 What were the least purchased stocks and average price of purchase?
