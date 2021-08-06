@@ -1,9 +1,9 @@
 ## W205 Project 3: Understanding User Behaviour
 ##### Atreyi Dasmahapatra, Andrés de la Rosa, Michelle Shen
 <br>
-<p> In this project we work for a company that advices customers whether to invest or not invest in certain technological stocks. Since the onset of the covid-19 pandemic, the stock market has had to deal with some drastic changes of its own. In this project we aim to analyze user behavior, in particular understand the trends of buying/selling of a particular tech stock and monitor stock tradings over a certain period of time.
+<p> In this project we work for a company that advises customers whether to invest or not invest in certain technological stocks. Since the onset of the COVID-19 pandemic, the stock market has had to deal with some drastic changes of its own. In this project we aim to analyze user behavior, in particular understand the trends of buying/selling of a particular tech stock and monitor stock tradings over a certain period of time.
 <p>  We will be reading tech stock information from the Yahoo API.  The tech stocks tickers we will be working with are: MSFT, AAPL, AMZN, GOOG, BABA, FB, INTC, NVDA, CRM, PYPL, TSLA and AMD.
-<p> We will be working on the Google Cloud Platform using docker containers.
+<p> We will be working on the Google Cloud Platform using Docker containers.
 <p> The various steps of the data pipeline are described next:
 
 ## 1. Setting up Docker
@@ -18,13 +18,13 @@ docker-compose up -d
 ```
 docker-compose ps
 ```
-#### c. We can look for more specific information to ensure the containers are running.
+#### c. We can look for more specific information to ensure the containers are running:
 ```
 docker-compose logs kafka | grep -i started
 ```
 
 ## 2. Installing Python 3.8 on the mids container.
-Our driver script has some python library dependencies that requires a Python version of 3.6 or higher.
+Our driver script has some Python library dependencies that requires a Python version of 3.6 or higher.
 
 #### a. We use a bash script that automates the installation of a number of necessary packages on the mids container.
 
