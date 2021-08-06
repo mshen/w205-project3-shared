@@ -1,7 +1,7 @@
 ## W205 Project 3: Understanding User Behaviour
 ##### Atreyi Dasmahapatra, Andrés de la Rosa, Michelle Shen
 <br>
-<p> In this project we work for a company that advices customers whether to invest or not invest in certain technological stocks. Since the onset of the covid-19 pandemic, the stock market has had to deal with some drastic changes of its own. In this project we aim to analyze user behavior, in particular understand the trends of buying/selling of a particular tech stock and advise our customers accordingly.
+<p> In this project we work for a company that advices customers whether to invest or not invest in certain technological stocks. Since the onset of the covid-19 pandemic, the stock market has had to deal with some drastic changes of its own. In this project we aim to analyze user behavior, in particular understand the trends of buying/selling of a particular tech stock and monitor stock tradings over a certain period of time.
 <p>  We will be reading tech stock information from the Yahoo API.  The tech stocks tickers we will be working with are: MSFT, AAPL, AMZN, GOOG, BABA, FB, INTC, NVDA, CRM, PYPL, TSLA and AMD.
 <p> We will be working on the Google Cloud Platform using docker containers.
 <p> The various steps of the data pipeline are described next:
@@ -181,8 +181,8 @@ Within our ```server.py``` script we have Kafka set up to log these events. We n
 docker-compose exec mids kafkacat -C -b kafka:29092 -t event -o beginning
 ```
 
-## 4. Automate the buying, selling and checking of stocks using a script
-We next run our script that autogenerates various types of calls:
+## 4. Automate the buying, selling and checking of stocks using a script using Apache Bench.
+<p> We next run our script that autogenerates various types of calls:
 ```
 ./auto_generate_ab.sh
 ```
@@ -210,7 +210,7 @@ docker-compose exec mids ab -p /w205/w205-project3-shared/00_financial_api_app/p
 
 ## 5. We open 3 new terminals to submit spark jobs; each of the following jobs will run on a separate terminal.
 #### a. Terminal 1: `stock_call_spark_job.py`
-In the first terminal, we run this spark job to log stock calls:
+In the first terminal, we run this spark job to create dataframs from the kafka topic stock calls:
 ```
 docker-compose exec spark spark-submit /w205/w205-project3-shared/00_financial_api_app/stock_call_spark_job.py
 ```
@@ -510,11 +510,14 @@ GROUP BY stock_name \
 ORDER BY call_frequency desc \
 LIMIT 1;
 
+<p> An example of the output is shown here:
 stock_name  | call_frequency 
 ------------+----------------
  TSLA       |        35 
 (1 row)
 ```
+We can run several more similar queries to create reports and analyze results.
+
 #### b. From the `stock_operation_hive` table, we run queries to answer the following:
 
 What were the most purchased stocks and average price of purchase?
@@ -551,5 +554,7 @@ What was the lowest price a stock was bought for?
 WITH purchases AS (SELECT * FROM stock_operation_hive WHERE event_type LIKE '%buy%') SELECT stock_name, price/quantity AS price_per_stock FROM purchases ORDER BY ASC price_per_stock ASC LIMIT 5;
 
 ```
+     
+
 
 
