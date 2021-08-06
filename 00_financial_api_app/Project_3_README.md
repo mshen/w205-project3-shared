@@ -187,6 +187,7 @@ docker-compose exec mids kafkacat -C -b kafka:29092 -t event -o beginning
 ./auto_generate_ab.sh
 ```
 The auto_generate_ab.sh script is as follows:
+
 ```
 #!/bin/bash
 stock_tickers=('MSFT' 'AAPL' 'AMZN' 'GOOG' 'BABA' 'FB' 'INTC' 'NVDA' 'CRM' 'PYPL' 'TSLA' 'AMD')
@@ -205,9 +206,9 @@ docker-compose exec mids ab  -n $rand_event_num  http://localhost:5000/${stock_t
 docker-compose exec mids ab -p /w205/w205-project3-shared/00_financial_api_app/post.json -T application/json -n $rand_event_num  http://localhost:5000/${stock_tickers[tick_idx_2]}/buy/$stock_rand_num
 
 docker-compose exec mids ab -p /w205/w205-project3-shared/00_financial_api_app/post.json -T application/json -n $rand_event_num  http://localhost:5000/${stock_tickers[tick_idx_3]}/sell/$stock_rand_num
-
 ```
 
+ 
 ## 5. We open 3 new terminals to submit spark jobs; each of the following jobs will run on a separate terminal.
 #### a. Terminal 1: `stock_call_spark_job.py`
 In the first terminal, we run this spark job to create dataframs from the kafka topic stock calls:
