@@ -16,7 +16,7 @@ class GetStockReturns():
 
     def __init__(self, StockName):
          self.conn = http.client.HTTPSConnection("apidojo-yahoo-finance-v1.p.rapidapi.com")
-         self.headers = {'x-rapidapi-key': "c043a23752msha066d276c1bc7b2p1354f7jsnbefed25fa290", 'x-rapidapi-host': "apidojo-yahoo-finance-v1.p.rapidapi.com"}
+         self.headers = {'x-rapidapi-key': "  ", 'x-rapidapi-host': "apidojo-yahoo-finance-v1.p.rapidapi.com"}
          self.StockName= StockName
          self.collected_data=[]
          self.stocks_and_returns= dict()
